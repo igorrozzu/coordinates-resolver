@@ -1,0 +1,56 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    google_maps_api_key: '%env(GOOGLE_GEOCODING_API_KEY)%'
+    here_maps_api_key: '%env(HEREMAPS_GEOCODING_API_KEY)%'
+    geocoder_enabled_providers: '%env(json:GEOCODER_ENABLED_PROVIDERS)%'
+    geocoder_default_providers_sequence: '%env(json:GEOCODER_DEFAULT_PROVIDERS_SEQUENCE)%'
+    geocoder_use_cache: '%env(bool:GEOCODER_USE_CACHE)%'
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    # controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # Geocoder services
+    GuzzleHttp\ClientInterface:
+        class: GuzzleHttp\Client
+    App\Service\Geocoder\Cache\GeocoderCacheInterface:
+        class: App\Service\Geocoder\Cache\GeocoderDBCache
+    App\Service\Geocoder\GeoBuilderInterface:
+        class: App\Service\Geocoder\GeocoderBuilder
+
+    App\Service\Geocoder\Providers\GoogleMapsGeocoder:
+        arguments:
+            $apiKey: '%google_maps_api_key%'
+    App\Service\Geocoder\Providers\HereMapsGeocoder:
+        arguments:
+            $apiKey: '%here_maps_api_key%'
+    geocoder.google_maps:
+        alias: App\Service\Geocoder\Providers\GoogleMapsGeocoder
+        public: true
+    geocoder.here_maps:
+        alias: App\Service\Geocoder\Providers\HereMapsGeocoder
+        public: true
+    geocoder.dummy:
+        alias: App\Service\Geocoder\Providers\DummyGeocoder
+        public: true
