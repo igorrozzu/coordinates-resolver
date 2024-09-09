@@ -1,7 +1,5 @@
 # Coordinates resolver
 
-This project is aimed to evaluate OOP and overall code design skills.
-
 ## How the API works
 API handles request on http://localhost/coordinates with the following params:
 * country_code (required, string)
